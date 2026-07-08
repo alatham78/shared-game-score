@@ -1,0 +1,16 @@
+{
+  "name": "shared-game-score-api",
+  "version": "1.0.0",
+  "description": "Azure Functions API for the shared game scoreboard",
+  "main": "src/functions/*.js",
+  "scripts": {
+    "start": "func start",
+    "dev": "node dev-server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "@azure/cosmos": "^4.2.0",
+    "@azure/functions": "^4.6.0",
+    "@azure/web-pubsub": "^1.1.3"
+  }
+}
