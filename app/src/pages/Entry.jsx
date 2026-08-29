@@ -122,8 +122,7 @@ export default function Entry() {
                 <span className="score-name">{row.name}</span>
                 <span className="muted small">
                   total {row.total}
-                  {typeof row.needed === 'number' &&
-                    ` · needs ${row.needed}`}
+                  {row.neededLabel && ` · ${row.neededLabel}`}
                 </span>
               </span>
               <input

@@ -120,14 +120,8 @@ export default function Display() {
                 {isLeader && game.roundCount > 0 ? '👑' : MEDALS[row.rank - 1] || row.rank}
               </span>
               <span className="board-name">{row.name}</span>
-              {typeof row.needed === 'number' && !gameOver && (
-                <span className="board-needed">
-                  {row.needed === 0
-                    ? game.winDirection === 'highest'
-                      ? 'made it!'
-                      : 'over the limit'
-                    : `needs ${row.needed}`}
-                </span>
+              {row.neededLabel && !gameOver && (
+                <span className="board-needed">{row.neededLabel}</span>
               )}
               <span className="board-score">
                 <AnimatedNumber value={row.total} />

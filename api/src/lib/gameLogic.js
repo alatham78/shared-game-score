@@ -27,9 +27,21 @@ function totalsByPlayer(game) {
 }
 
 /**
+ * Caption for the points remaining vs a target. Highest-wins is "how many
+ * to reach it"; lowest-wins is "how much room before the limit".
+ */
+function neededLabel(winDirection, needed) {
+  if (winDirection === 'lowest') {
+    return needed === 0 ? 'over the limit' : `${needed} to limit`;
+  }
+  return needed === 0 ? 'made it!' : `needs ${needed}`;
+}
+
+/**
  * Returns players sorted best-first for the game's win direction, with
  * dense ranks (ties share a rank) and, when a target score is set, the
- * points each player still needs before reaching it.
+ * points each player still needs before reaching it (or remaining room
+ * before a lowest-wins limit).
  */
 function standings(game) {
   const totals = totalsByPlayer(game);
@@ -51,6 +63,7 @@ function standings(game) {
     row.rank = rank;
     if (typeof game.targetScore === 'number') {
       row.needed = Math.max(0, game.targetScore - row.total);
+      row.neededLabel = neededLabel(game.winDirection, row.needed);
     }
   }
   return rows;
@@ -93,4 +106,12 @@ function withDerived(game) {
   };
 }
 
-module.exports = { totalsByPlayer, standings, leaderIds, thresholdReached, winnerIds, withDerived };
+module.exports = {
+  totalsByPlayer,
+  standings,
+  neededLabel,
+  leaderIds,
+  thresholdReached,
+  winnerIds,
+  withDerived,
+};

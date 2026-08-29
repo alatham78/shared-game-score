@@ -12,7 +12,9 @@ const path = require('node:path');
  *    runs end-to-end with zero cloud dependencies.
  *
  * Both expose: listGames(userId), getGame(userId, id),
- * getActiveGame(userId), createGame(game), updateGame(game).
+ * getActiveGame(userId) — in-progress game, else most recently updated
+ * (so displays keep a finished winner on screen), createGame(game),
+ * updateGame(game).
  */
 
 class CosmosStore {
@@ -60,14 +62,24 @@ class CosmosStore {
 
   async getActiveGame(userId) {
     const container = await this.container();
-    const { resources } = await container.items
+    const params = [{ name: '@userId', value: userId }];
+    const { resources: active } = await container.items
       .query({
         query:
           "SELECT * FROM c WHERE c.userId = @userId AND c.status = 'active' ORDER BY c.updatedAt DESC OFFSET 0 LIMIT 1",
-        parameters: [{ name: '@userId', value: userId }],
+        parameters: params,
       })
       .fetchAll();
-    return resources[0] || null;
+    if (active[0]) return active[0];
+    // No in-progress game: keep the most recently updated one so the TV
+    // still shows a winner after Finish (and after a display refresh).
+    const { resources: latest } = await container.items
+      .query({
+        query: 'SELECT * FROM c WHERE c.userId = @userId ORDER BY c.updatedAt DESC OFFSET 0 LIMIT 1',
+        parameters: params,
+      })
+      .fetchAll();
+    return latest[0] || null;
   }
 
   async createGame(game) {
@@ -114,7 +126,7 @@ class FileStore {
 
   async getActiveGame(userId) {
     const games = await this.listGames(userId);
-    return games.find((g) => g.status === 'active') || null;
+    return games.find((g) => g.status === 'active') || games[0] || null;
   }
 
   async createGame(game) {

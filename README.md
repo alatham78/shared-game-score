@@ -11,7 +11,8 @@ on your phone while everyone watches the live scoreboard on a TV or iPad.
   changes, and a winner banner takes over when someone clinches it.
 - **Both win directions.** Highest-wins (Flip 7 races up to 200) and
   lowest-wins (Mexican Train / Hearts count penalty points). When a target
-  score is set, the board shows how many points each player still needs.
+  score is set, the board shows how many points each player still needs
+  (highest-wins) or how many remain before the limit (lowest-wins).
 
 ## Architecture
 

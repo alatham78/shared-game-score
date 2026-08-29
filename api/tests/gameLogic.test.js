@@ -66,6 +66,7 @@ test('no leader before any round is scored', () => {
 test('needed points appear only when a target score is set', () => {
   const noTarget = standings(makeGame({ rounds: [{ scores: { a: 10, b: 0, c: 0 } }] }));
   assert.equal(noTarget[0].needed, undefined);
+  assert.equal(noTarget[0].neededLabel, undefined);
 
   const withTarget = standings(
     makeGame({ targetScore: 200, rounds: [{ scores: { a: 150, b: 220, c: 0 } }] })
@@ -74,6 +75,28 @@ test('needed points appear only when a target score is set', () => {
   assert.equal(byName.Alice, 50);
   assert.equal(byName.Bob, 0); // already past the target — never negative
   assert.equal(byName.Carol, 200);
+});
+
+test('neededLabel is "needs N" for highest-wins and "N to limit" for lowest-wins', () => {
+  const high = standings(
+    makeGame({ targetScore: 200, rounds: [{ scores: { a: 150, b: 200, c: 0 } }] })
+  );
+  const highBy = Object.fromEntries(high.map((r) => [r.name, r.neededLabel]));
+  assert.equal(highBy.Alice, 'needs 50');
+  assert.equal(highBy.Bob, 'made it!');
+  assert.equal(highBy.Carol, 'needs 200');
+
+  const low = standings(
+    makeGame({
+      winDirection: 'lowest',
+      targetScore: 100,
+      rounds: [{ scores: { a: 40, b: 105, c: 80 } }],
+    })
+  );
+  const lowBy = Object.fromEntries(low.map((r) => [r.name, r.neededLabel]));
+  assert.equal(lowBy.Alice, '60 to limit');
+  assert.equal(lowBy.Bob, 'over the limit');
+  assert.equal(lowBy.Carol, '20 to limit');
 });
 
 test('threshold ends a highest-wins game with the top score winning', () => {

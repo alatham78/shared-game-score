@@ -121,3 +121,27 @@ test('negotiate falls back to polling when Web PubSub is not configured', async 
   assert.equal(result.jsonBody.url, null);
   assert.equal(result.jsonBody.pollIntervalMs, 4000);
 });
+
+test('scoreboard keeps a finished game when nothing else is in progress', async () => {
+  const user = { userId: 'tv-user', userDetails: 'tv@example.com' };
+  const created = await controllers.createGame({
+    principal: user,
+    body: { players: ['A', 'B'] },
+  });
+  await controllers.updateGame({
+    principal: user,
+    params: { id: created.jsonBody.game.id },
+    body: { status: 'finished' },
+  });
+  const shown = await controllers.getActiveGame({ principal: user });
+  assert.equal(shown.jsonBody.game.id, created.jsonBody.game.id);
+  assert.equal(shown.jsonBody.game.status, 'finished');
+
+  const next = await controllers.createGame({
+    principal: user,
+    body: { players: ['C', 'D'] },
+  });
+  const preferred = await controllers.getActiveGame({ principal: user });
+  assert.equal(preferred.jsonBody.game.id, next.jsonBody.game.id);
+  assert.equal(preferred.jsonBody.game.status, 'active');
+});

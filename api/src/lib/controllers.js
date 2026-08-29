@@ -70,6 +70,8 @@ async function createGame({ principal, body }) {
 }
 
 async function getActiveGame({ principal }) {
+  // Prefer an in-progress game; otherwise the most recently updated one so
+  // the scoreboard keeps showing a winner after the game is finished.
   const game = await getStore().getActiveGame(principal.userId);
   return { status: 200, jsonBody: { game: game ? withDerived(game) : null } };
 }

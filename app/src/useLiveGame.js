@@ -8,6 +8,8 @@ import { api } from './api';
  * WebSocket URL that auto-joins this account's group, and every score
  * submission is broadcast to the group. Fallback: polling /api/games/active
  * (4s when there's no WebSocket, 30s as a safety net when there is).
+ * That endpoint prefers an in-progress game and otherwise returns the most
+ * recently updated one, so a finished winner stays on the TV.
  */
 export function useLiveGame() {
   const [game, setGame] = useState(undefined); // undefined = loading, null = none
@@ -21,7 +23,14 @@ export function useLiveGame() {
     async function refresh() {
       try {
         const { game: fresh } = await api.getActiveGame();
-        if (!state.closed) setGame(fresh);
+        if (state.closed) return;
+        // Prefer the API's pick (active, else most recent). If that is
+        // null, keep a board already on screen so Finish cannot blank the TV.
+        setGame((current) => {
+          if (fresh) return fresh;
+          if (current) return current;
+          return null;
+        });
       } catch {
         /* transient network error — next poll will retry */
       }

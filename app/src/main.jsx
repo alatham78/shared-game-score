@@ -6,6 +6,7 @@ import Home from './pages/Home.jsx';
 import NewGame from './pages/NewGame.jsx';
 import Entry from './pages/Entry.jsx';
 import Display from './pages/Display.jsx';
+import RequireAuth from './components/RequireAuth.jsx';
 import './styles.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -14,8 +15,22 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/new" element={<NewGame />} />
-          <Route path="/entry/:gameId" element={<Entry />} />
+          <Route
+            path="/new"
+            element={
+              <RequireAuth>
+                <NewGame />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/entry/:gameId"
+            element={
+              <RequireAuth>
+                <Entry />
+              </RequireAuth>
+            }
+          />
           <Route path="/display" element={<Display />} />
         </Routes>
       </BrowserRouter>
