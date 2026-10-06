@@ -4,12 +4,10 @@ import { api } from './api';
 /**
  * Keeps a game in sync for display devices.
  *
- * Primary channel: Azure Web PubSub — /api/negotiate hands back a client
- * WebSocket URL that auto-joins this account's group, and every score
- * submission is broadcast to the group. Fallback: polling /api/games/active
- * (4s when there's no WebSocket, 30s as a safety net when there is).
- * That endpoint prefers an in-progress game and otherwise returns the most
- * recently updated one, so a finished winner stays on the TV.
+ * Cloudflare serves /api/negotiate with url: null, so displays poll
+ * /api/games/active every few seconds. That endpoint prefers an in-progress
+ * game and otherwise returns the most recently updated one, so a finished
+ * winner stays on the TV.
  */
 export function useLiveGame() {
   const [game, setGame] = useState(undefined); // undefined = loading, null = none

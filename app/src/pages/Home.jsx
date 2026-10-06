@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useUser } from '../auth.jsx';
+import { useAuth, useUser } from '../auth.jsx';
 import { api } from '../api';
 import LoginScreen from '../components/LoginScreen.jsx';
 
 export default function Home() {
   const user = useUser();
+  const { logout } = useAuth();
   const [games, setGames] = useState(null);
   const [error, setError] = useState(null);
 
@@ -29,11 +30,9 @@ export default function Home() {
         <h1 className="brand-title small-title">🏆 Scorecast</h1>
         <div className="header-actions">
           <span className="muted small">{user.userDetails}</span>
-          {user.identityProvider !== 'local' && (
-            <a className="btn btn-ghost" href="/logout">
-              Sign out
-            </a>
-          )}
+          <button className="btn btn-ghost" type="button" onClick={() => logout()}>
+            Sign out
+          </button>
         </div>
       </header>
 

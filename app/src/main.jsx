@@ -31,7 +31,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               </RequireAuth>
             }
           />
-          <Route path="/display" element={<Display />} />
+          <Route
+            path="/display"
+            element={
+              <RequireAuth>
+                <Display />
+              </RequireAuth>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

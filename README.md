@@ -5,7 +5,7 @@ on your phone while everyone watches the live scoreboard on a TV or iPad.
 
 - **Phone = score entry.** Create a game, add players, submit scores round
   by round, undo mistakes, set an optional winning score.
-- **TV / iPad = display.** Sign in with the same account, open the
+- **TV / iPad = display.** Enter the same household PIN, open the
   scoreboard, and it auto-follows your active game. Rows re-sort with
   smooth animations after every round, confetti flies when the lead
   changes, and a winner banner takes over when someone clinches it.
@@ -16,86 +16,70 @@ on your phone while everyone watches the live scoreboard on a TV or iPad.
 
 ## Architecture
 
-Everything runs on Azure free/serverless tiers — roughly **$0/month** at
-game-night scale.
+Runs on Cloudflare’s free tier at game-night scale.
 
 ```
-phone (entry)  ──► Azure Static Web Apps (Free)
-TV (display)         ├─ React frontend (app/)
-                     ├─ built-in auth: GitHub / Microsoft sign-in
-                     └─ managed Azure Functions API (api/)
-                            ├─ Cosmos DB serverless   ← games & rounds
-                            └─ Web PubSub (Free_F1)   ← pushes round updates
-                                                        to displays instantly
-                                                        (displays also poll as
-                                                        a fallback)
+phone (entry)  ──► Cloudflare Worker
+TV (display)         ├─ React frontend (app/, static assets)
+                     ├─ household PIN session
+                     └─ /api/* on the same Worker
+                            └─ D1 (SQLite)  ← games & rounds
+                               displays poll every few seconds
 ```
 
 | Piece | Service | Tier / cost |
 | --- | --- | --- |
-| Hosting + auth + API | Azure Static Web Apps | Free |
-| Data | Cosmos DB (serverless) | ~pennies per month |
-| Real-time updates | Azure Web PubSub | Free (20 connections, 20k msg/day) |
+| Hosting + API | Cloudflare Worker + static assets | Free |
+| Data | D1 | Free |
+| Auth | Shared household PIN | — |
 
 ## Repository layout
 
 ```
-app/    React frontend (Vite) — entry UI, animated display, login
-api/    Azure Functions (Node 20) — game CRUD, rounds, Web PubSub negotiate
-infra/  Bicep template for all Azure resources
-.github/workflows/  CI: API tests + Static Web Apps deploy
+app/       React frontend (Vite) — entry UI, animated display, PIN login
+worker/    Cloudflare Worker — game CRUD, rounds, PIN session
+api/       Scoring logic + Node unit tests (shared with the Worker)
+.github/workflows/  CI: tests + Wrangler deploy
 ```
 
 ## Local development
 
-No Azure account needed — data goes to a local JSON file and displays fall
-back to polling:
-
 ```bash
-# terminal 1 — API on :7071
-cd api && npm install && npm run dev
+# one-time
+echo 'PIN=7391' > .dev.vars
+cd app && npm install && cd ..
+npm install
+
+# terminal 1 — API + D1 on :8787
+npx wrangler dev --port 8787
 
 # terminal 2 — frontend on :5173 (proxies /api)
-cd app && npm install && npm run dev
+cd app && npm run dev
 ```
 
-Open <http://localhost:5173>. Auth is faked locally (`local-dev-user`), so
-the app is fully usable offline. Run API unit tests with `cd api && npm test`.
+Open <http://localhost:5173>. Sign in with PIN `7391` (or whatever you put in `.dev.vars`).
+Run tests with `npm test` from the repo root (`api` + `worker`).
 
-## Deploy to Azure
+## Deploy to Cloudflare
 
-1. **Provision** (one time):
+D1 database `scorecast` is already created on the Cloudflare account
+(`565e322c-e8c1-4b12-92e2-ecd0661b9525`). One-time setup:
 
-   ```bash
-   az group create -n scorecast-rg -l eastus2
-   az deployment group create -g scorecast-rg -f infra/main.bicep
-   ```
+```bash
+npx wrangler login
+cd app && npm install && npm run build && cd ..
+npx wrangler deploy
+echo '<your-pin>' | npx wrangler secret put PIN
+```
 
-2. **Wire up GitHub Actions**: get the deployment token and save it as the
-   `AZURE_STATIC_WEB_APPS_API_TOKEN` repository secret:
-
-   ```bash
-   az staticwebapp secrets list -n <staticWebAppName from deployment output> \
-     --query properties.apiKey -o tsv
-   ```
-
-3. **Push to `main`** — the workflow tests the API and deploys the app and
-   API to the Static Web App.
-
-4. **Sign in** at the deployed URL with GitHub or Microsoft (both are
-   built into Static Web Apps Free — no identity configuration needed).
-   Google or other providers require the Standard tier (~$9/mo) with a
-   custom OIDC provider.
+GitHub Actions deploys on push to `main` when repository secrets
+`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are set. Put the
+household PIN in the Worker with `wrangler secret put PIN` once; CI does
+not overwrite it.
 
 ## Using it
 
-1. On your phone: sign in → **New game** → name it, add players, pick
-   highest- or lowest-wins, optionally set the winning score / limit.
-2. On the TV or iPad: sign in with the **same account** → **Scoreboard
-   display**. It finds your active game automatically.
-3. Submit scores each round from your phone; the TV updates within a
-   second (Web PubSub) or a few seconds (polling fallback). Undo the last
-   round or adjust the target score any time from the entry screen.
-4. When a player reaches the target, the entry screen offers **Finish
-   game**, and the display celebrates the winner. Finished games stay in
-   your history on the home screen.
+1. On your phone: open the site → enter the household PIN → **New game**.
+2. On the TV or iPad: same PIN → **Scoreboard display**.
+3. Submit scores each round from your phone; the TV refreshes every few seconds.
+4. When a player reaches the target, **Finish game** — the display celebrates.

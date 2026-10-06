@@ -1,34 +1,41 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { api } from './api';
 
-/**
- * Static Web Apps exposes the signed-in user at /.auth/me (no code needed).
- * In local dev there is no SWA in front of Vite, so we fall back to a fake
- * local user to keep the full flow working offline.
- */
-const AuthContext = createContext({ user: undefined });
-
-async function fetchUser() {
-  try {
-    const res = await fetch('/.auth/me', { headers: { accept: 'application/json' } });
-    if (!res.ok) throw new Error('no auth endpoint');
-    const data = await res.json();
-    return data?.clientPrincipal ?? null;
-  } catch {
-    if (import.meta.env.DEV) {
-      return { userId: 'local-dev-user', userDetails: 'dev@localhost', identityProvider: 'local' };
-    }
-    return null;
-  }
-}
+const AuthContext = createContext({ user: undefined, login: async () => {}, logout: async () => {} });
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(undefined); // undefined = still loading
+  const [user, setUser] = useState(undefined);
+
+  async function refresh() {
+    try {
+      const { user: next } = await api.me();
+      setUser(next ?? null);
+    } catch {
+      setUser(null);
+    }
+  }
+
+  async function login(pin) {
+    const { user: next } = await api.login(pin);
+    setUser(next);
+  }
+
+  async function logout() {
+    await api.logout().catch(() => {});
+    setUser(null);
+  }
+
   useEffect(() => {
-    fetchUser().then(setUser);
+    refresh();
   }, []);
-  return <AuthContext.Provider value={{ user }}>{children}</AuthContext.Provider>;
+
+  return <AuthContext.Provider value={{ user, login, logout }}>{children}</AuthContext.Provider>;
 }
 
 export function useUser() {
   return useContext(AuthContext).user;
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
 }

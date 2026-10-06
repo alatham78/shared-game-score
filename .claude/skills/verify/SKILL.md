@@ -5,27 +5,28 @@ description: Build, launch, and drive the Scorecast app (API dev server + Vite +
 
 # Verifying Scorecast locally
 
-Two processes, no cloud dependencies (file store + polling fallback):
+Worker + D1 on :8787, Vite on :5173 (proxies `/api` → the Worker). Household
+PIN is in `.dev.vars` (`PIN=7391`).
 
 ```bash
-# 1. API (port 7071, data in api/.data/)
-cd api && npm install && node dev-server.js &
+# 1. Worker (port 8787, local D1)
+echo 'PIN=7391' > .dev.vars
+npx wrangler dev --port 8787 --ip 127.0.0.1 &
 
-# 2. Frontend (port 5173, proxies /api → 7071)
+# 2. Frontend (port 5173, proxies /api → 8787)
 cd app && npm install && npx vite --port 5173 --strictPort &
 ```
 
-Auth is faked locally: the dev server injects a `local-dev-user` principal
-when no `x-ms-client-principal` header is present, and the frontend falls
-back to a fake user when `/.auth/me` is unreachable (dev builds only).
+Or drive the built SPA from the Worker itself after `npm run build --prefix app`
+(open http://127.0.0.1:8787). Sign in with PIN `7391`.
 
 ## Driving it
 
 - Phone flow: `/` → New game → add players (min 2) → optional target →
   Start game → enter per-player scores → Submit round.
 - TV flow: open `/display` in a second context — it auto-follows the most
-  recently updated *active* game and refreshes via 4s polling (Web PubSub
-  is not configured locally, so `/api/negotiate` returns `url: null`).
+  recently updated *active* game and refreshes via 4s polling
+  (`/api/negotiate` returns `url: null`).
 
 Playwright: use `chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })`
 in the remote environment — the npm-pinned browser build is not installed.
@@ -36,5 +37,5 @@ in the remote environment — the npm-pinned browser build is not installed.
   before screenshotting or asserting scores (`.board-score` text).
 - Leader-change celebration only fires when the round count increases AND
   the leader set changes (class `celebrating` on the row, confetti canvas).
-- Unit tests: `cd api && npm test` (game logic + controllers, file store
-  in a temp dir). These are CI's job, not verification.
+- Unit tests: `npm test` from the repo root (`api` + `worker`). These are
+  CI's job, not verification.
