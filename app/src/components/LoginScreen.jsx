@@ -1,4 +1,24 @@
+import { useState } from 'react';
+import { useAuth } from '../auth.jsx';
+
 export default function LoginScreen() {
+  const { login } = useAuth();
+  const [pin, setPin] = useState('');
+  const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event) {
+    event.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      await login(pin);
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="page center-page">
       <div className="login-card">
@@ -7,15 +27,27 @@ export default function LoginScreen() {
         <p className="muted">
           Keep score on your phone. Watch it live on the TV.
         </p>
-        <a className="btn btn-primary btn-block" href="/login/microsoft">
-          Sign in with Microsoft
-        </a>
-        <a className="btn btn-secondary btn-block" href="/login/github">
-          Sign in with GitHub
-        </a>
+        <form onSubmit={submit} className="form">
+          <label className="field">
+            <span className="field-label">Household PIN</span>
+            <input
+              type="password"
+              inputMode="numeric"
+              autoComplete="off"
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+              placeholder="Enter the shared PIN"
+              autoFocus
+            />
+          </label>
+          {error && <p className="error">{error}</p>}
+          <button className="btn btn-primary btn-block" disabled={busy || !pin}>
+            {busy ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
         <p className="muted small">
-          Sign in with the same account on every device — phones enter scores,
-          TVs and tablets display them.
+          Use the same PIN on every device — phones enter scores, TVs and tablets
+          display them.
         </p>
       </div>
     </div>

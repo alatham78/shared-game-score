@@ -5,6 +5,8 @@ local.settings.json
 *.log
 .env
 .env.*
+.dev.vars
+.wrangler/
 .DS_Store
 test-results/
 playwright-report/

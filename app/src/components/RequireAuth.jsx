@@ -1,7 +1,7 @@
 import { useUser } from '../auth.jsx';
 import LoginScreen from './LoginScreen.jsx';
 
-/** Blocks /new and /entry until SWA (or local-dev) auth has resolved. */
+/** Blocks /new, /entry, and /display until the household PIN session is valid. */
 export default function RequireAuth({ children }) {
   const user = useUser();
   if (user === undefined) return <div className="page center-page muted">Loading…</div>;

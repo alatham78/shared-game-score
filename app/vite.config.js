@@ -6,9 +6,8 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Local dev: the API dev server (api/dev-server.js) plays the role of
-      // the SWA-managed Functions app.
-      '/api': 'http://localhost:7071',
+      // Local: wrangler dev on :8787 (D1 + PIN). Azure Functions path is unused.
+      '/api': 'http://127.0.0.1:8787',
     },
   },
 });

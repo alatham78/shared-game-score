@@ -1,0 +1,14 @@
+{
+  "name": "scorecast",
+  "private": true,
+  "scripts": {
+    "test": "npm test --prefix api && npm test --prefix worker",
+    "build": "npm run build --prefix app",
+    "dev:api": "wrangler dev --port 8787",
+    "dev": "npm run dev --prefix app",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.147.0"
+  }
+}
