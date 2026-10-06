@@ -22,7 +22,7 @@ jobs:
           npm test
       - name: Worker unit tests
         working-directory: worker
-        run: npm test -- --test-reporter=spec
+        run: npm test
 
   deploy:
     runs-on: ubuntu-latest
